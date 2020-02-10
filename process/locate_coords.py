@@ -33,8 +33,6 @@ if __name__ == '__main__':
     is_plot = False
     cuda_id = 0
     scale_int = (0, 4095)
-    img_src_dir = Path.home() / 'workspace/localization/data/woundhealing/raw/'
-    save_dir_root = Path.home() / 'workspace/localization/predictions/woundhealing'
     
     model_loc_dir = Path.home() / 'workspace/localization/results/locmax_detection/woundhealing-v2/woundhealing-v2-mix/different_losses'
     bn = 'woundhealing-v2-mix+Fwoundhealing+roi96_unet-simple_l2-G2.5_20190802_161150_adam_lr0.000128_wd0.0_batch128'
@@ -43,6 +41,8 @@ if __name__ == '__main__':
     nms_threshold_rel = 0.05
     loss_type = 'l2-G2.5'
     model_type = 'unet-simple'  
+    
+    
     
     
 #    model_loc_dir = Path.home() / 'workspace/localization/results/locmax_detection/woundhealing-v2/woundhealing-v2-mix/different_losses_complete/roi48/'
@@ -55,9 +55,9 @@ if __name__ == '__main__':
     
     
     assert model_path.exists()
-    
-    
-    save_dir = save_dir_root / bn
+    #img_src_dir = Path.home() / 'workspace/localization/data/woundhealing/raw/'
+    img_src_dir = Path.home() / 'workspace/localization/data/woundhealing/HitDataJan2020/'
+    save_dir = Path.home() / 'workspace/localization/predictions/woundhealing_experiments' / bn
     
       
     n_ch_in = 1
@@ -82,8 +82,7 @@ if __name__ == '__main__':
     model = model.to(device)
     
     #%%
-    img_paths = img_src_dir.rglob('*.tif')
-    img_paths = list(img_paths)
+    img_paths = [x for x in img_src_dir.rglob('*.tif') if not x.name.startswith('.')]
     for img_path in tqdm.tqdm(img_paths):
         img = cv2.imread(str(img_path), -1)
         
@@ -102,8 +101,8 @@ if __name__ == '__main__':
             
         predictions = predictions[0]
         
-        df = pd.DataFrame({'cx':predictions['coordinates'][:, 0], 
-                            'cy':predictions['coordinates'][:, 1],
+        df = pd.DataFrame({'x':predictions['coordinates'][:, 1], 
+                            'y':predictions['coordinates'][:, 0],
                             'scores_abs':predictions['scores_abs'],
                             'scores_rel':predictions['scores_rel']
                             })
@@ -111,7 +110,7 @@ if __name__ == '__main__':
     
         
         base_dir = str(img_path.parent).replace(str(img_src_dir), str(save_dir))
-        save_name = Path(base_dir) / f'{img_path.name}_preds.csv'
+        save_name = Path(base_dir) / f'{img_path.name}__coords.csv'
         save_name.parent.mkdir(parents = True, exist_ok = True)
         
         
